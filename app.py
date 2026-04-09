@@ -1,7 +1,7 @@
 import os
-import csv
 from flask import Flask, request, abort
 from dotenv import load_dotenv
+from supabase import create_client, Client
 
 from linebot.v3 import (
     WebhookHandler
@@ -27,9 +27,12 @@ load_dotenv()
 # 從環境變數中取得私密資訊
 channel_secret = os.getenv('LINE_CHANNEL_SECRET')
 channel_access_token = os.getenv('LINE_CHANNEL_ACCESS_TOKEN')
+supabase_url = os.getenv('SUPABASE_URL')
+supabase_key = os.getenv('SUPABASE_KEY')
 
 app = Flask(__name__)
 
+supabase: Client = create_client(supabase_url, supabase_key)
 configuration = Configuration(access_token=channel_access_token)
 handler = WebhookHandler(channel_secret)
 
@@ -78,21 +81,22 @@ def handle_message(event):
     if is_search:
         try:
             results = []
-            with open("data.csv", "r", encoding="utf-8") as f:
-                reader = csv.reader(f)
-                header = next(reader, None)  # 取得標題列
-                
-                # 逐列檢查
-                for row in reader:
-                    if not keyword or any(keyword in col for col in row):
-                        results.append(row)
+            # 從 Supabase 取得資料
+            response = supabase.table("projects").select("*").execute()
+            all_data = response.data
+            header = ["單位分類", "專案名稱", "機密狀態"]
+            
+            # 逐列檢查
+            for item in all_data:
+                row = [item.get('department', ''), item.get('project_name', ''), item.get('secret_status', '')]
+                if not keyword or any(keyword in col for col in row):
+                    results.append(row)
             
             # 組織回傳文字
             if results:
                 reply_text = f"【搜尋結果：{keyword if keyword else '全部內容'}】\n"
-                if header:
-                    reply_text += " | ".join(header) + "\n"
-                    reply_text += "-" * 22 + "\n"
+                reply_text += " | ".join(header) + "\n"
+                reply_text += "-" * 22 + "\n"
                 
                 for row in results:
                     reply_text += " | ".join(row) + "\n"
