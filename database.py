@@ -32,3 +32,31 @@ def search_items(keyword: str) -> list[dict]:
     except Exception as e:
         # 當資料庫發生連線/查詢錯誤時，將錯誤拋出讓外層處理
         raise Exception(f"資料庫查詢失敗: {str(e)}")
+
+def add_item(name: str, stock: int, actual: int, remarks: str = "") -> list[dict]:
+    """
+    新增資料到資料庫中，並自動計算盤差。
+    """
+    diff = actual - stock
+    data = {
+        "品項名稱[規格]": name,
+        "庫存數量": stock,
+        "實際盤點": actual,
+        "盤差": diff,
+        "備注": remarks
+    }
+    try:
+        response = supabase_client.table("test").insert(data).execute()
+        return response.data
+    except Exception as e:
+        raise Exception(f"資料庫寫入失敗: {str(e)}")
+
+def delete_item(name: str) -> list[dict]:
+    """
+    根據品項名稱精確刪除資料庫中的商品。
+    """
+    try:
+        response = supabase_client.table("test").delete().eq('"品項名稱[規格]"', name).execute()
+        return response.data
+    except Exception as e:
+        raise Exception(f"資料庫刪除失敗: {str(e)}")
