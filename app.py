@@ -3,16 +3,16 @@ from flask import Flask, request, abort
 from dotenv import load_dotenv
 
 # 匯入 LINE Bot 所需的模組
-from linebot.v3 import WebhookHandler
-from linebot.v3.exceptions import InvalidSignatureError
-from linebot.v3.messaging import (
+from linebot.v3 import WebhookHandler  # type: ignore
+from linebot.v3.exceptions import InvalidSignatureError  # type: ignore
+from linebot.v3.messaging import (  # type: ignore
     Configuration,
     ApiClient,
     MessagingApi,
     ReplyMessageRequest,
     TextMessage
 )
-from linebot.v3.webhooks import MessageEvent, TextMessageContent
+from linebot.v3.webhooks import MessageEvent, TextMessageContent  # type: ignore
 
 # 匯入由我們自行封裝好的「訊息處理中心」
 from message_handler import handle_text_message

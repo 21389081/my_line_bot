@@ -3,8 +3,8 @@ from dotenv import load_dotenv
 from supabase import create_client, Client
 ## supabase 測試
 load_dotenv()
-supabase_url = os.getenv('SUPABASE_URL')
-supabase_key = os.getenv('SUPABASE_KEY')
+supabase_url = os.getenv('SUPABASE_URL') or ""
+supabase_key = os.getenv('SUPABASE_KEY') or ""
 supabase: Client = create_client(supabase_url, supabase_key)
 
 try:

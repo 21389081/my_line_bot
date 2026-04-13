@@ -1,4 +1,4 @@
-from database import search_items, add_item, delete_item
+from database import search_items
 
 def format_search_results(results: list[dict], keyword: str) -> str:
     """
@@ -46,15 +46,10 @@ def handle_text_message(user_message: str) -> str:
     user_message = user_message.strip()
     
     # 預設兜底回覆文案
-    reply_text = "⚠️ 無效的輸入！\n目前機器人僅支援以下指令：\n👉 「查詢全部」\n👉 「查詢 [品項名稱]」\n👉 「新增 [品項名稱] [庫存數量] [實際盤點] [(可選)備註]」\n👉 「刪除 [品項名稱]」\n(注意中間需有半形空格)"
+    reply_text = "⚠️ 無效的輸入！\n目前機器人僅支援以下指令：\n👉 「查詢全部」\n👉 「查詢 [品項名稱]」(注意中間需有半形空格)"
     
     is_search = False
-    is_add = False
-    is_delete = False
-    
     keyword = ""
-    add_data = {}
-    delete_name = ""
 
     # 1. 意圖解析 (Intent Parsing)
     if user_message == "查詢全部":
@@ -66,40 +61,6 @@ def handle_text_message(user_message: str) -> str:
             is_search = True
         else:
             reply_text = "⚠️ 請輸入想要查詢的品項名稱關鍵字！\n例如：查詢 行動電源"
-    elif user_message.startswith("新增 "):
-        parts = user_message.split(" ")
-        # 過濾多餘空白，確保使用者多打空白也不會出錯
-        parts = [p for p in parts if p.strip()]
-        
-        if len(parts) >= 4:
-            try:
-                name = parts[1]
-                stock = int(parts[2])
-                actual = int(parts[3])
-                # 若有備註，將剩餘的部份重新組裝
-                remarks = " ".join(parts[4:]) if len(parts) > 4 else ""
-                
-                add_data = {
-                    "name": name,
-                    "stock": stock,
-                    "actual": actual,
-                    "remarks": remarks
-                }
-                is_add = True
-            except ValueError:
-                reply_text = "⚠️ 數字格式錯誤！\n請確定「庫存數量」與「實際盤點」都是整數。\n例如：新增 行動電源 20 18"
-        else:
-            reply_text = "⚠️ 新增指令格式錯誤！\n請依照：新增 [品項名稱] [庫存數量] [實際盤點] \n例如：新增 行動電源 20 18"
-            
-    elif user_message.startswith("刪除 "):
-        delete_name = user_message.split(" ", 1)[1].strip()
-        if delete_name:
-            is_delete = True
-        else:
-            reply_text = "⚠️ 請輸入想要刪除的品項名稱！\n例如：刪除 行動電源"
-            
-    elif user_message == "讀取excel":
-        reply_text = "⚠️ 系統指令已升級！\n請使用新指令：\n「查詢全部」或「查詢 [品項名稱]」\n例如：查詢 行動電源"
         
     # 2. 商業邏輯調用 (Business Logic & Services)
     if is_search:
@@ -110,20 +71,5 @@ def handle_text_message(user_message: str) -> str:
             reply_text = format_search_results(results, keyword)
         except Exception as e:
             reply_text = f"不好意思，小幫手遇到了一點問題：\n{str(e)}"
-    elif is_add:
-        try:
-            add_item(add_data["name"], add_data["stock"], add_data["actual"], add_data["remarks"])
-            reply_text = f"✅ 已成功新增品項：{add_data['name']}\n庫存：{add_data['stock']} / 盤點：{add_data['actual']}"
-        except Exception as e:
-            reply_text = f"新增失敗：\n{str(e)}"
-    elif is_delete:
-        try:
-            results = delete_item(delete_name)
-            if results:
-                reply_text = f"✅ 已成功刪除品項：{delete_name} (共刪除 {len(results)} 筆資料)"
-            else:
-                reply_text = f"⚠️ 找不到品項「{delete_name}」，無法刪除。"
-        except Exception as e:
-            reply_text = f"刪除失敗：\n{str(e)}"
             
     return reply_text
